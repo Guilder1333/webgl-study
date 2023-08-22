@@ -1,3 +1,8 @@
+/**
+ * @param {WebGLRenderingContext} gl
+ * @param {string} url
+ * @returns {WebGLTexture}
+ */
 export function loadTexture(gl, url) {
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -24,7 +29,7 @@ export function loadTexture(gl, url) {
     border,
     srcFormat,
     srcType,
-    pixel,
+    pixel
   );
 
   const image = new Image();
@@ -36,7 +41,7 @@ export function loadTexture(gl, url) {
       internalFormat,
       srcFormat,
       srcType,
-      image,
+      image
     );
 
     // WebGL1 has different requirements for power of 2 images
