@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "module": "ES2020",
+    "target": "ES2017",
+    "allowJs": true,
+    "moduleResolution": "Bundler",
+    "strictNullChecks": true,
+    "alwaysStrict": true,
+    "sourceMap": true
+  },
+  "include": ["src/**/*"]
+}

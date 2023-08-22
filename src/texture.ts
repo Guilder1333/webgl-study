@@ -1,10 +1,11 @@
-/**
- * @param {WebGLRenderingContext} gl
- * @param {string} url
- * @returns {WebGLTexture}
- */
-export function loadTexture(gl, url) {
+export function loadTexture(
+  gl: WebGLRenderingContext,
+  url: string
+): WebGLTexture {
   const texture = gl.createTexture();
+  if (!texture) {
+    throw new Error('Failed to create GL texture.');
+  }
   gl.bindTexture(gl.TEXTURE_2D, texture);
 
   // Because images have to be downloaded over the internet
@@ -63,6 +64,6 @@ export function loadTexture(gl, url) {
   return texture;
 }
 
-function isPowerOf2(value) {
+function isPowerOf2(value: number): boolean {
   return (value & (value - 1)) === 0;
 }

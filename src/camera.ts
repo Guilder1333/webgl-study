@@ -1,21 +1,14 @@
 export class Camera {
-  /**
-   * @type {mat4}
-   */
-  projection;
+  public readonly projection: mat4;
 
-  /**
-   * @param {WebGLRenderingContext} gl
-   */
-  constructor(gl) {
+  constructor(gl: WebGLRenderingContext) {
     const fov = (45 * Math.PI) / 180;
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    const aspect = gl.canvas.width / gl.canvas.height;
     const zNear = 0.1;
     const zFar = 1000.0;
     const projection = mat4.create();
 
     mat4.perspective(projection, fov, aspect, zNear, zFar);
-    console.log(projection);
     this.projection = projection;
   }
 }

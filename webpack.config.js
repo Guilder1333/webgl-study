@@ -8,10 +8,11 @@ const isProduction = process.env.NODE_ENV == 'production';
 const stylesHandler = 'style-loader';
 
 const config = {
-  entry: './src/index.js',
+  entry: './src/index.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
   },
+  devtool: 'inline-source-map',
   devServer: {
     open: true,
     host: 'localhost',
@@ -41,10 +42,18 @@ const config = {
         test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
         type: 'asset',
       },
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
 
       // Add your rules for custom modules here
       // Learn more about loaders from https://webpack.js.org/loaders/
     ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js', '.json'],
   },
 };
 

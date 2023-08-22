@@ -28,8 +28,11 @@ const fsSource = `
  * @param {number} type
  * @param {string} source
  */
-function loadShader(gl, type, source) {
+function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
+  if (!shader) {
+    throw new Error('Failed to create GL shader.');
+  }
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -39,17 +42,18 @@ function loadShader(gl, type, source) {
   return shader;
 }
 
-/**
- *
- * @param {WebGLRenderingContext} gl
- * @param {string} vsSource
- * @param {string} fsSource
- */
-function compileShader(gl, vsSource, fsSource) {
+function compileShader(
+  gl: WebGLRenderingContext,
+  vsSource: string,
+  fsSource: string
+): WebGLProgram {
   const vs = loadShader(gl, gl.VERTEX_SHADER, vsSource);
   const fs = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
 
   const program = gl.createProgram();
+  if (!program) {
+    throw new Error('Failed to create GL program.');
+  }
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
   gl.linkProgram(program);
@@ -61,18 +65,15 @@ function compileShader(gl, vsSource, fsSource) {
 }
 
 export class Program {
-  /**
-   * @type {WebGLRenderingContext}
-   */
-  gl;
-  programIndex;
-  attributes;
-  uniform;
-  /**
-   *
-   * @param {WebGLRenderingContext} gl
-   */
-  constructor(gl) {
+  private readonly gl: WebGLRenderingContext;
+  private readonly programIndex: WebGLProgram;
+  private readonly attributes: { vertexPos: number; texCoords: number };
+  private readonly uniform: {
+    modelView: WebGLUniformLocation;
+    projection: WebGLUniformLocation;
+    texture: WebGLUniformLocation;
+  };
+  constructor(gl: WebGLRenderingContext) {
     this.gl = gl;
 
     this.programIndex = compileShader(gl, vsSource, fsSource);
@@ -81,37 +82,39 @@ export class Program {
       texCoords: this.gl.getAttribLocation(this.programIndex, 'texCoords'),
     };
     this.uniform = {
-      modelView: this.gl.getUniformLocation(this.programIndex, 'modelView'),
-      projection: this.gl.getUniformLocation(this.programIndex, 'projection'),
-      texture: this.gl.getUniformLocation(this.programIndex, 'uSampler'),
+      modelView: this.getUniformLocation('modelView'),
+      projection: this.getUniformLocation('projection'),
+      texture: this.getUniformLocation('uSampler'),
     };
+  }
+
+  private getUniformLocation(name: string): WebGLUniformLocation {
+    const location = this.gl.getUniformLocation(this.programIndex, name);
+    if (!location) {
+      throw new Error(`Failed to get uniform property '${name}' location.`);
+    }
+    return location;
   }
 
   activate() {
     this.gl.useProgram(this.programIndex);
   }
 
-  setModelView(modelView) {
+  setModelView(modelView: mat4) {
     this.gl.uniformMatrix4fv(this.uniform.modelView, false, modelView);
   }
 
-  setProjection(projection) {
+  setProjection(projection: mat4) {
     this.gl.uniformMatrix4fv(this.uniform.projection, false, projection);
   }
 
-  /**
-   * @param {WebGLTexture} texture
-   */
-  setTexture0(texture) {
+  setTexture0(texture: WebGLTexture) {
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
     this.gl.uniform1i(this.uniform.texture, 0);
   }
 
-  /**
-   * @param {WebGLBuffer} buffer
-   */
-  setVertices(buffer) {
+  setVertices(buffer: WebGLBuffer) {
     const components = 4;
     const type = this.gl.FLOAT;
     const normalize = false;
@@ -119,20 +122,17 @@ export class Program {
     const offset = 0;
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
     this.gl.vertexAttribPointer(
-      this.attributes.vertices,
+      this.attributes.vertexPos,
       components,
       type,
       normalize,
       stride,
       offset
     );
-    this.gl.enableVertexAttribArray(this.attributes.vertices);
+    this.gl.enableVertexAttribArray(this.attributes.vertexPos);
   }
 
-  /**
-   * @param {WebGLBuffer} buffer
-   */
-  setTextureCoords(buffer) {
+  setTextureCoords(buffer: WebGLBuffer) {
     const components = 2;
     const type = this.gl.FLOAT;
     const normalize = false;
@@ -150,7 +150,7 @@ export class Program {
     this.gl.enableVertexAttribArray(this.attributes.texCoords);
   }
 
-  drawArray(offset, count) {
+  drawArray(offset: number, count: number) {
     this.gl.drawArrays(this.gl.TRIANGLES, offset, count);
   }
 }

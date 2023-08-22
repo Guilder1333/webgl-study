@@ -1,37 +1,21 @@
-import { loadObject } from './resource-loader.js';
-import { Camera } from './camera.js';
-import { Program } from './program.js';
-import { Model } from './model.js';
-
-/**
- * @typedef {CompiledProgram}
- * @property {number} program
- * @property {{}} attributes
- * @property {{}} uniform
- */
+import { Camera } from './camera';
+import { Program } from './program';
+import { Model } from './model';
 
 class Main {
-  /** @type {WebGLRenderingContext} */
-  gl;
-  angle = 0;
-  /**
-   * @type {Program}
-   */
-  program;
-  /**
-   * @type {Camera}
-   */
-  camera;
+  private gl: WebGLRenderingContext;
+  private angle = 0;
+  private program: Program;
+  private camera: Camera;
   constructor() {}
 
   async init() {
-    /** @type {HTMLCanvasElement} */
-    const canvas = document.getElementById('canvas');
-    this.gl = canvas.getContext('webgl');
-
-    if (!this.gl) {
+    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    const glOrNull = canvas.getContext('webgl');
+    if (!glOrNull) {
       throw new Error('WebGL initialization failed.');
     }
+    this.gl = glOrNull;
 
     this.program = new Program(this.gl);
     this.program.activate();
@@ -40,7 +24,7 @@ class Main {
     this.camera = new Camera(this.gl);
 
     const house = new Model();
-    house.load('./3d/Cottage_FREE.obj', this.gl);
+    await house.load('./3d/Cottage_FREE.obj', this.gl);
     house.position.z = -100;
     house.rotator.x = 30;
 

@@ -17,21 +17,21 @@ export class Rotator {
    */
   z = 0;
 
-  rotate(x, y, z) {
+  rotate(x: number, y: number, z: number) {
     this.x += x;
     this.y += y;
     this.z += z;
   }
 
-  rotateX(x) {
+  rotateX(x: number) {
     this.x += x;
   }
 
-  rotateY(y) {
+  rotateY(y: number) {
     this.y += y;
   }
 
-  rotateZ(z) {
+  rotateZ(z: number) {
     this.z += z;
   }
 

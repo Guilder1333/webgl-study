@@ -11,42 +11,40 @@ import { normalizeSub } from './vector';
  * @property {string} material
  */
 
-/**
- * @typedef {object} Material
- * @property {number[]} ambient
- * @property {number[]} diffuse
- * @property {number[]} specular
- * @property {number} opaque
- * @property {string} diffuseMap
- * @property {string} normalMap
- * @property {WebGLTexture} diffuseIndex
- * @property {WebGLTexture} normalIndex
- */
+type ObjectItem = {
+  name: string;
+  faces: number[][][];
+  smooth: boolean;
+  material: string;
+};
 
-/**
- * @typedef {object} BoundingBox
- * @property {number} maxX
- * @property {number} maxY
- * @property {number} maxZ
- * @property {number} minX
- * @property {number} minY
- * @property {number} minZ
- */
+export type Material = {
+  ambient: number[];
+  diffuse: number[];
+  specular: number[];
+  opaque: number;
+  diffuseMap: string | null;
+  normalMap: string | null;
+  diffuseIndex: WebGLTexture | null;
+  normalIndex: WebGLTexture | null;
+};
 
-/**
- * @typedef {object} Mesh
- * @property {Float32Array} buffer
- * @property {number} bufferIndex
- * @property {BoundingBox} box
- * @property {Material} material
- */
+export type BoundingBox = {
+  maxX: number;
+  maxY: number;
+  maxZ: number;
+  minX: number;
+  minY: number;
+  minZ: number;
+};
+export type Mesh = {
+  buffer: number[];
+  bufferIndex: WebGLBuffer | null;
+  box: BoundingBox;
+  material: Material | null | undefined;
+};
 
-/**
- *
- * @param {string} str
- * @returns
- */
-function parseFaceItem(str) {
+function parseFaceItem(str: string): number[] {
   const items = str.split('/');
   if (items.length === 1) {
     const v = Number(items[0]);
@@ -64,7 +62,12 @@ function parseFaceItem(str) {
   throw new Error(`Failed to parse face item '${str}'.`);
 }
 
-function copyVertex(buffer, vertices, index, bb) {
+function copyVertex(
+  buffer: number[],
+  vertices: number[],
+  index: number,
+  bb: BoundingBox
+) {
   const x = vertices[index];
   const y = vertices[index + 1];
   const z = vertices[index + 2];
@@ -80,23 +83,20 @@ function copyVertex(buffer, vertices, index, bb) {
   buffer.push(vertices[index + 3]);
 }
 
-function copyTexCoords(buffer, texCoords, index) {
+function copyTexCoords(buffer: number[], texCoords: number[], index: number) {
   buffer.push(texCoords[index]);
   buffer.push(texCoords[index + 1]);
 }
 
-/**
- *
- * @param {string} url
- * @returns {Material[]}
- */
-export async function loadMaterial(url) {
+export async function loadMaterial(
+  url: string
+): Promise<Map<string, Material>> {
   const response = await fetch(url);
   const data = await response.text();
 
   const lines = data.split('\n');
-  const materials = {};
-  let material = null;
+  const materials = new Map<string, Material>();
+  let material: Material | null = null;
   for (const line of lines) {
     if (line.startsWith('#')) {
       continue;
@@ -114,7 +114,7 @@ export async function loadMaterial(url) {
         diffuseIndex: null,
         normalIndex: null,
       };
-      materials[params[0].trim()] = material;
+      materials.set(params[0].trim(), material);
     } else if (material) {
       if (token === 'Ns') {
         material.specular[3] = parseFloat(params[0]);
@@ -140,21 +140,13 @@ export async function loadMaterial(url) {
   return materials;
 }
 
-/**
- *
- * @param {string} url
- * @returns {Mesh[]}
- */
-export async function loadObject(url) {
-  /**
-   * @type {Response}
-   */
+export async function loadObject(url: string): Promise<Mesh[]> {
   const response = await fetch(url);
   const data = await response.text();
   const lines = data.split('\n');
   let mtlib = '';
-  let objects = [];
-  let object = null;
+  let objects: ObjectItem[] = [];
+  let object: ObjectItem | null = null;
   const vertices = [0, 0, 0, 0];
   const normals = [0, 0, 0];
   const texCoords = [0, 0, 0];
@@ -190,7 +182,7 @@ export async function loadObject(url) {
       objects.push(object);
     } else if (object) {
       if (token === 'f') {
-        const face = [];
+        const face: number[][] = [];
         for (const item of params) {
           face.push(parseFaceItem(item));
         }
@@ -205,9 +197,9 @@ export async function loadObject(url) {
 
   const materials = await loadMaterial(`./3d/${mtlib}`);
 
-  const result = [];
+  const meshes: Mesh[] = [];
   for (const obj of objects) {
-    const buffer = [];
+    const buffer: number[] = [];
     const bb = {
       maxX: -Infinity,
       maxY: -Infinity,
@@ -240,9 +232,8 @@ export async function loadObject(url) {
         copyTexCoords(buffer, texCoords, face[3][1] * 3);
       }
     }
-    const material = materials[obj.material ?? 'default'];
-    console.log(materials);
-    result.push({
+    const material = materials.get(obj.material ?? 'default');
+    meshes.push({
       buffer,
       material,
       box: bb,
@@ -250,5 +241,5 @@ export async function loadObject(url) {
     });
   }
 
-  return result;
+  return meshes;
 }
