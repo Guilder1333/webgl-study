@@ -1,12 +1,16 @@
-import { Camera } from './camera';
-import { Program } from './program';
-import { Model } from './model';
+import { Camera } from './engine/camera';
+import { Program } from './engine/program';
+import { Model } from './engine/model';
+import { ResourceManager } from './engine/resource-manager';
+import { HouseModel } from './game/house';
+import { Entity } from './engine/entity';
 
 class Main {
   private gl: WebGLRenderingContext;
-  private angle = 0;
+  private resourceManager: ResourceManager;
   private program: Program;
   private camera: Camera;
+  private models: Entity[] = [];
   constructor() {}
 
   async init() {
@@ -17,26 +21,32 @@ class Main {
     }
     this.gl = glOrNull;
 
+    this.resourceManager = new ResourceManager(this.gl);
+
     this.program = new Program(this.gl);
     this.program.activate();
 
     this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     this.camera = new Camera(this.gl);
+    this.camera.position.z = 50;
 
-    const house = new Model();
-    await house.load('./3d/Cottage_FREE.obj', this.gl);
-    house.position.z = -100;
+    const house = new HouseModel();
+    house.position.z = -50;
     house.rotator.x = 30;
+    this.models.push(house);
 
-    const frame = () => {
-      this.angle++;
-      this.clear();
+    for (const model of this.models) {
+      await model.init(this.resourceManager);
+    }
 
-      house.rotator.y = this.angle;
+    let lastFrameTime = performance.now();
+    const frame = (timeStamp: number) => {
+      const deltaTime = (timeStamp - lastFrameTime) / 1000;
+      lastFrameTime = timeStamp;
 
-      this.program.setProjection(this.camera.projection);
+      this.update(deltaTime);
 
-      house.render(this.program);
+      this.render();
       requestAnimationFrame(frame);
     };
 
@@ -51,6 +61,23 @@ class Main {
     this.gl.depthFunc(this.gl.LEQUAL);
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+  }
+
+  update(deltaTime: number) {
+    for (const model of this.models) {
+      model.update(deltaTime);
+    }
+  }
+
+  render() {
+    this.clear();
+
+    this.program.setViewMatrix(this.camera.makeMatrix());
+    this.program.setProjection(this.camera.projection);
+
+    for (const model of this.models) {
+      model.render(this.program);
+    }
   }
 }
 

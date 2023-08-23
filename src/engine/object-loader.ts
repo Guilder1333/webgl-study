@@ -1,16 +1,5 @@
 import { normalizeSub } from './vector';
 
-/**
- * @typedef {object} ObjectItem
- * @property {string} name
- * @property {Array<number>} vertices
- * @property {Array<number>} normals
- * @property {Array<number>} texCoords
- * @property {Array<Array<Array<number>>>} faces
- * @property {boolean} smooth
- * @property {string} material
- */
-
 type ObjectItem = {
   name: string;
   faces: number[][][];
@@ -25,8 +14,6 @@ export type Material = {
   opaque: number;
   diffuseMap: string | null;
   normalMap: string | null;
-  diffuseIndex: WebGLTexture | null;
-  normalIndex: WebGLTexture | null;
 };
 
 export type BoundingBox = {
@@ -39,7 +26,6 @@ export type BoundingBox = {
 };
 export type Mesh = {
   buffer: number[];
-  bufferIndex: WebGLBuffer | null;
   box: BoundingBox;
   material: Material | null | undefined;
 };
@@ -111,8 +97,6 @@ export async function loadMaterial(
         opaque: 1,
         diffuseMap: null,
         normalMap: null,
-        diffuseIndex: null,
-        normalIndex: null,
       };
       materials.set(params[0].trim(), material);
     } else if (material) {
@@ -237,7 +221,6 @@ export async function loadObject(url: string): Promise<Mesh[]> {
       buffer,
       material,
       box: bb,
-      bufferIndex: null,
     });
   }
 

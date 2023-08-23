@@ -1,15 +1,14 @@
 const vsSource = `
-  attribute vec4 vertexPos;
-  attribute vec2 texCoords;
+  attribute vec4 vPosition;
+  attribute vec2 vTexture;
 
-  uniform mat4 modelView;
-  uniform mat4 projection;
+  uniform mat4 mModelViewProj;
 
   varying highp vec2 vTextureCoord;
 
   void main() {
-    gl_Position = projection * modelView * vertexPos;
-    vTextureCoord = texCoords;
+    gl_Position = mModelViewProj * vPosition;
+    vTextureCoord = vTexture;
   }
 `;
 const fsSource = `
@@ -22,12 +21,6 @@ const fsSource = `
   }
 `;
 
-/**
- *
- * @param {WebGLRenderingContext} gl
- * @param {number} type
- * @param {string} source
- */
 function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
   if (!shader) {
@@ -64,26 +57,33 @@ function compileShader(
   return program;
 }
 
+const identityMatrix = mat4.create();
+
 export class Program {
   private readonly gl: WebGLRenderingContext;
   private readonly programIndex: WebGLProgram;
-  private readonly attributes: { vertexPos: number; texCoords: number };
+  private readonly attributes: { position: number; texture: number };
   private readonly uniform: {
-    modelView: WebGLUniformLocation;
-    projection: WebGLUniformLocation;
+    modelViewProj: WebGLUniformLocation;
     texture: WebGLUniformLocation;
   };
+  private readonly viewMatrix = mat4.create();
+  private readonly mvpMatrix = mat4.create();
+  private readonly vpMatrix = mat4.create();
+  private projectionMatrix = identityMatrix;
+  private matrixStack: mat4[] = [];
+  private parentMatrix = mat4.create();
+
   constructor(gl: WebGLRenderingContext) {
     this.gl = gl;
 
     this.programIndex = compileShader(gl, vsSource, fsSource);
     this.attributes = {
-      vertexPos: this.gl.getAttribLocation(this.programIndex, 'vertexPos'),
-      texCoords: this.gl.getAttribLocation(this.programIndex, 'texCoords'),
+      position: this.gl.getAttribLocation(this.programIndex, 'vPosition'),
+      texture: this.gl.getAttribLocation(this.programIndex, 'vTexture'),
     };
     this.uniform = {
-      modelView: this.getUniformLocation('modelView'),
-      projection: this.getUniformLocation('projection'),
+      modelViewProj: this.getUniformLocation('mModelViewProj'),
       texture: this.getUniformLocation('uSampler'),
     };
   }
@@ -100,12 +100,35 @@ export class Program {
     this.gl.useProgram(this.programIndex);
   }
 
-  setModelView(modelView: mat4) {
-    this.gl.uniformMatrix4fv(this.uniform.modelView, false, modelView);
+  pushMatrix(matrix: mat4) {
+    this.matrixStack.push(matrix);
+    mat4.multiply(this.parentMatrix, this.parentMatrix, matrix);
+  }
+
+  popMatrix() {
+    const top = this.matrixStack.pop() as mat4;
+    mat4.invert(top, top);
+    mat4.multiply(this.parentMatrix, this.parentMatrix, top);
+  }
+
+  setModelMatrix(matrix: mat4) {
+    mat4.multiply(this.mvpMatrix, this.vpMatrix, this.parentMatrix);
+    mat4.multiply(this.mvpMatrix, this.mvpMatrix, matrix);
+    this.gl.uniformMatrix4fv(this.uniform.modelViewProj, false, this.mvpMatrix);
+  }
+
+  setViewMatrix(matrix: mat4) {
+    mat4.invert(this.viewMatrix, matrix);
+    this.updateViewProjection();
   }
 
   setProjection(projection: mat4) {
-    this.gl.uniformMatrix4fv(this.uniform.projection, false, projection);
+    this.projectionMatrix = projection;
+    this.updateViewProjection();
+  }
+
+  updateViewProjection() {
+    mat4.multiply(this.vpMatrix, this.projectionMatrix, this.viewMatrix);
   }
 
   setTexture0(texture: WebGLTexture) {
@@ -122,14 +145,14 @@ export class Program {
     const offset = 0;
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
     this.gl.vertexAttribPointer(
-      this.attributes.vertexPos,
+      this.attributes.position,
       components,
       type,
       normalize,
       stride,
       offset
     );
-    this.gl.enableVertexAttribArray(this.attributes.vertexPos);
+    this.gl.enableVertexAttribArray(this.attributes.position);
   }
 
   setTextureCoords(buffer: WebGLBuffer) {
@@ -140,14 +163,14 @@ export class Program {
     const offset = 4 * 4;
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
     this.gl.vertexAttribPointer(
-      this.attributes.texCoords,
+      this.attributes.texture,
       components,
       type,
       normalize,
       stride,
       offset
     );
-    this.gl.enableVertexAttribArray(this.attributes.texCoords);
+    this.gl.enableVertexAttribArray(this.attributes.texture);
   }
 
   drawArray(offset: number, count: number) {
