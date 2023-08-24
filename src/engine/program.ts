@@ -60,7 +60,6 @@ function compileShader(
 const identityMatrix = mat4.create();
 
 export class Program {
-  private readonly gl: WebGLRenderingContext;
   private readonly programIndex: WebGLProgram;
   private readonly attributes: { position: number; texture: number };
   private readonly uniform: {
@@ -74,10 +73,8 @@ export class Program {
   private matrixStack: mat4[] = [];
   private parentMatrix = mat4.create();
 
-  constructor(gl: WebGLRenderingContext) {
-    this.gl = gl;
-
-    this.programIndex = compileShader(gl, vsSource, fsSource);
+  constructor(private readonly gl: WebGLRenderingContext) {
+    this.programIndex = compileShader(this.gl, vsSource, fsSource);
     this.attributes = {
       position: this.gl.getAttribLocation(this.programIndex, 'vPosition'),
       texture: this.gl.getAttribLocation(this.programIndex, 'vTexture'),

@@ -1,11 +1,19 @@
 import { Entity } from './entity';
 import { Program } from './program';
 import { RenderableMesh, ResourceManager } from './resource-manager';
+import { Rotator } from './rotator';
+import { Vector3 } from './vector';
+const emptyModels: RenderableMesh[] = [];
 
 export class Model extends Entity {
-  private meshes: RenderableMesh[];
-  constructor(private readonly source: string) {
-    super();
+  private meshes: RenderableMesh[] = emptyModels;
+  constructor(
+    private readonly source: string,
+    position?: Vector3,
+    rotation?: Rotator
+  ) {
+    super(position, rotation);
+    console.log(position);
   }
 
   async init(resourceManager: ResourceManager) {

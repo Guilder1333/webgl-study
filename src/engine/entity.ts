@@ -4,8 +4,13 @@ import { Rotator } from './rotator';
 import { Vector3 } from './vector';
 
 export class Entity {
-  public readonly position = new Vector3();
-  public readonly rotator = new Rotator();
+  public readonly position: Vector3;
+  public readonly rotator: Rotator;
+
+  constructor(position?: Vector3, rotation?: Rotator) {
+    this.position = position ?? new Vector3();
+    this.rotator = rotation ?? new Rotator();
+  }
 
   async init(_resourceManager: ResourceManager) {}
 

@@ -25,10 +25,12 @@ export function normalizeSub(vec: number[], index: number) {
 }
 
 export class Vector3 extends Array<number> {
-  constructor() {
+  constructor(x?: number, y?: number, z?: number) {
     super();
     this.length = 3;
-    this[0] = this[1] = this[2] = 0;
+    this[0] = x ?? 0;
+    this[1] = y ?? 0;
+    this[2] = z ?? 0;
   }
 
   len(): number {

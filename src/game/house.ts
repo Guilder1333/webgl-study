@@ -1,6 +1,7 @@
 import { CompositeModel } from '../engine/composite-model';
 import { Entity } from '../engine/entity';
 import { Model } from '../engine/model';
+import { Vector3 } from '../engine/vector';
 
 export class HouseModel extends CompositeModel {
   private readonly house: Entity;
@@ -9,10 +10,9 @@ export class HouseModel extends CompositeModel {
 
   constructor() {
     super({
-      model: new Model('./3d/Cottage_FREE.obj'),
+      model: new Model('./3d/Cottage_FREE.obj', new Vector3(50, 0, 0)),
     });
     this.house = this.root.model;
-    this.house.position.x = 50;
     console.log(this.house);
   }
 
